@@ -1,1 +1,111 @@
-# tienda-backend
+# Backend Tienda Gamer (DSY1104)
+
+API REST de la tienda online hecha con **Spring Boot 3.5**, **Spring Data JPA**, **Spring Security** y **JWT**.
+Documentada con **Swagger (springdoc-openapi)**.
+
+## Cómo ejecutarlo
+
+Requisitos: Java 17 o superior (no hace falta instalar Maven, el proyecto trae `mvnw`).
+
+```bash
+./mvnw spring-boot:run
+```
+
+En Windows (PowerShell o CMD):
+
+```bash
+mvnw.cmd spring-boot:run
+```
+
+- API: http://localhost:8080/api/v1
+- Swagger: http://localhost:8080/swagger-ui.html
+- Consola H2 (solo perfil por defecto): http://localhost:8080/h2-console (JDBC URL `jdbc:h2:file:./data/tiendadb`, usuario `sa`, sin clave)
+
+### Base de datos
+
+| Perfil | Base de datos | Cómo activarlo |
+|---|---|---|
+| (por defecto) | H2 en archivo `./data/tiendadb` | nada |
+| `postgres` | PostgreSQL en la instancia AWS EC2 | `./mvnw spring-boot:run -Dspring-boot.run.profiles=postgres` |
+| `mysql` | MySQL | `./mvnw spring-boot:run -Dspring-boot.run.profiles=mysql` |
+
+Para PostgreSQL se debe cambiar la IP de la instancia EC2 en `application-postgres.properties`
+o definir las variables `DB_URL`, `DB_USER` y `DB_PASSWORD`.
+
+Las tablas se crean solas (`ddl-auto=update`) y la primera vez se cargan datos de ejemplo.
+
+### Usuarios de prueba
+
+| Rol | Correo | Contraseña |
+|---|---|---|
+| ADMIN | admin@duoc.cl | Admin1234@ |
+| VENDEDOR | vendedor@duoc.cl | Vendedor123@ |
+| CLIENTE | cliente@gmail.com | Cliente123@ |
+
+## Modelo de datos
+
+```
+categorias (id, nombre, descripcion)
+    1 ── N
+productos (id, codigo, nombre, descripcion, precio, precio_oferta, stock, stock_critico, imagen, emoji, categoria_id)
+
+usuarios (id, run, nombre, apellidos, correo, password[BCrypt], rol, fecha_nacimiento, region, comuna, direccion, fecha_registro)
+    1 ── N
+ordenes (id, fecha, estado, usuario_id, nombre, apellidos, correo, calle, departamento, region, comuna, indicaciones, total)
+    1 ── N
+detalle_orden (id, orden_id, producto_id, nombre_producto, cantidad, precio_unitario, subtotal)
+```
+
+## Endpoints (versión v1)
+
+| Método | Ruta | Descripción | Acceso |
+|---|---|---|---|
+| POST | /api/v1/auth/login | Iniciar sesión, devuelve token y refresh token | Público |
+| POST | /api/v1/auth/registro | Registro de cliente | Público |
+| POST | /api/v1/auth/refresh | Renovar token de acceso | Público (con refresh token) |
+| GET | /api/v1/auth/me | Perfil del usuario conectado | Autenticado |
+| PUT | /api/v1/auth/password | Cambiar mi contraseña | Autenticado |
+| GET | /api/v1/productos | Listar productos (`?categoriaId=`) | Público |
+| GET | /api/v1/productos/ofertas | Productos en oferta | Público |
+| GET | /api/v1/productos/stock-critico | Productos con stock crítico | ADMIN, VENDEDOR |
+| GET | /api/v1/productos/{id} | Detalle de producto | Público |
+| POST | /api/v1/productos | Crear producto | ADMIN |
+| PUT | /api/v1/productos/{id} | Actualizar producto | ADMIN |
+| DELETE | /api/v1/productos/{id} | Eliminar producto | ADMIN |
+| GET | /api/v1/categorias | Listar categorías | Público |
+| GET | /api/v1/categorias/{id} | Detalle de categoría | Público |
+| POST/PUT/DELETE | /api/v1/categorias[/{id}] | Mantener categorías | ADMIN |
+| POST | /api/v1/ordenes | Crear orden (checkout) | CLIENTE, ADMIN |
+| GET | /api/v1/ordenes/mias | Mis compras | Autenticado |
+| GET | /api/v1/ordenes | Listar órdenes | ADMIN, VENDEDOR |
+| GET | /api/v1/ordenes/{id} | Detalle de orden | ADMIN, VENDEDOR |
+| PUT | /api/v1/ordenes/{id}/estado | Cambiar estado | ADMIN |
+| DELETE | /api/v1/ordenes/{id} | Eliminar orden | ADMIN |
+| GET/POST/PUT/DELETE | /api/v1/usuarios[/{id}] | Mantenedor de usuarios y roles | ADMIN |
+
+## Seguridad
+
+- Contraseñas cifradas con **BCrypt**.
+- Login entrega un **token de acceso** (30 min) y un **refresh token** (7 días), ambos JWT firmados con HMAC-SHA256.
+- `JwtAuthenticationFilter` valida firma, expiración y tipo de token en cada petición y carga el rol desde la BD.
+- `SecurityConfig` define qué rol puede usar cada endpoint. Sesión `STATELESS`.
+- Errores en JSON: 401 (sin token o token inválido), 403 (rol sin permiso), 404, 409 (regla de negocio).
+- La clave del JWT se puede definir con la variable de entorno `JWT_SECRET`.
+
+## Lógica de negocio
+
+- El total de la orden se calcula en el servidor con los precios de la BD (usa el precio de oferta si existe).
+- Si un producto no tiene stock suficiente la compra se rechaza (409) y no se guarda nada.
+- Al comprar se descuenta stock; al cancelar o eliminar una orden se devuelve.
+- RUN validado con módulo 11 y correos solo `@duoc.cl`, `@profesor.duoc.cl` o `@gmail.com`.
+- No se puede eliminar una categoría con productos, ni el último administrador, ni la propia cuenta.
+
+## Pruebas
+
+```bash
+./mvnw test
+```
+
+- `ValidadoresTest`: RUN y correo.
+- `OrdenServiceTest`: lógica de compra con Mockito (total con oferta, stock insuficiente, cancelación).
+- `SeguridadApiTest`: integración con MockMvc (login, JWT alterado, refresh, permisos por rol, CRUD).
