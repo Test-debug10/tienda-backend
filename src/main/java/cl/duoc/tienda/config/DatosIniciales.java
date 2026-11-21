@@ -105,7 +105,7 @@ public class DatosIniciales implements CommandLineRunner {
         usuario.setCorreo(correo);
         usuario.setPassword(passwordEncoder.encode(password));
         usuario.setRol(rol);
-        usuario.setRegion("Región Metropolitana de Santiago");
+        usuario.setRegion("Metropolitana de Santiago");
         usuario.setComuna("Santiago");
         usuario.setDireccion("Av. Libertador Bernardo O'Higgins 1234");
         usuarioRepository.save(usuario);

@@ -150,7 +150,7 @@ class SeguridadApiTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"nombre":"Pedro","apellidos":"González","correo":"cliente@gmail.com",
-                                 "calle":"Calle 1","region":"Región Metropolitana de Santiago","comuna":"Santiago",
+                                 "calle":"Calle 1","region":"Metropolitana de Santiago","comuna":"Santiago",
                                  "items":[{"productoId":2,"cantidad":1}]}
                                 """))
                 .andExpect(status().isCreated())

@@ -71,7 +71,7 @@ class OrdenServiceTest {
 
     private OrdenRequest pedido(OrdenRequest.Item... items) {
         return new OrdenRequest("Pedro", "González", "cliente@gmail.com", "Calle 123", null,
-                "Región Metropolitana de Santiago", "Santiago", null, List.of(items));
+                "Metropolitana de Santiago", "Santiago", null, List.of(items));
     }
 
     @Test
