@@ -13,7 +13,7 @@ public class Usuario {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /** RUN sin puntos ni guion, por ejemplo 19011022K. */
+    /** RUN sin puntos ni guion, por ejemplo 201234565. */
     @Column(nullable = false, unique = true, length = 9)
     private String run;
 

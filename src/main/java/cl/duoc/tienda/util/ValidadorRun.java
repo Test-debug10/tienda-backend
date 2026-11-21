@@ -2,7 +2,7 @@ package cl.duoc.tienda.util;
 
 /**
  * Valida el RUN chileno con el algoritmo de módulo 11 (RF-009).
- * Acepta el formato sin puntos ni guion (ej: 19011022K) y también con ellos.
+ * Acepta el formato sin puntos ni guion (ej: 201234565) y también con ellos.
  */
 public final class ValidadorRun {
 
