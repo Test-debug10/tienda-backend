@@ -3,6 +3,8 @@
 API REST de la tienda online hecha con **Spring Boot 3.5**, **Spring Data JPA**, **Spring Security** y **JWT**.
 Documentada con **Swagger (springdoc-openapi)**.
 
+Frontend en React: https://github.com/sebacasti07/Migracion-React-a-Tienda-EvFullStack1
+
 ## Cómo ejecutarlo
 
 Requisitos: Java 17 o superior (no hace falta instalar Maven, el proyecto trae `mvnw`).
