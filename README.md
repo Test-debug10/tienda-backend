@@ -31,8 +31,31 @@ mvnw.cmd spring-boot:run
 | `postgres` | PostgreSQL en la instancia AWS EC2 | `./mvnw spring-boot:run -Dspring-boot.run.profiles=postgres` |
 | `mysql` | MySQL | `./mvnw spring-boot:run -Dspring-boot.run.profiles=mysql` |
 
-Para PostgreSQL se debe cambiar la IP de la instancia EC2 en `application-postgres.properties`
-o definir las variables `DB_URL`, `DB_USER` y `DB_PASSWORD`.
+### PostgreSQL en AWS EC2
+
+La base de datos de la entrega está en una instancia EC2 del Learner Lab de AWS Academy:
+
+| Dato | Valor |
+|---|---|
+| Instancia | `tienda-gamer-db` · Ubuntu · t3.micro · us-east-1 |
+| IP (elástica, no cambia al reiniciar el laboratorio) | `52.5.171.74` |
+| Puerto | 5432 (abierto solo para la IP del equipo en el grupo de seguridad `tienda-db-sg`) |
+| Base / usuario | `tienda_gamer` / `tienda_user` |
+| Versión | PostgreSQL 18 |
+
+PostgreSQL se instaló con un script de *user data* al crear la instancia; ese script también
+generó la contraseña, que quedó en `/root/clave-db.txt` dentro de la instancia. La contraseña
+**no está en el repositorio**: el backend la lee de la variable de entorno `TIENDA_DB_PASSWORD`
+(o `DB_PASSWORD`).
+
+```powershell
+$env:TIENDA_DB_PASSWORD = "<clave>"
+.\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=postgres"
+```
+
+Antes hay que iniciar el laboratorio (Start Lab): al apagarse, la instancia se detiene.
+Si la red desde donde se trabaja cambia de IP, hay que actualizar la regla del puerto 5432 en
+`tienda-db-sg`. Para otra instancia se puede sobrescribir todo con `DB_URL`, `DB_USER` y `DB_PASSWORD`.
 
 Las tablas se crean solas (`ddl-auto=update`) y la primera vez se cargan datos de ejemplo.
 
