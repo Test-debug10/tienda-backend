@@ -9,14 +9,39 @@ Frontend en React: https://github.com/sebacasti07/Migracion-React-a-Tienda-EvFul
 
 Requisitos: Java 17 o superior (no hace falta instalar Maven, el proyecto trae `mvnw`).
 
-**Con la base de datos en AWS EC2 (IP elástica `52.5.171.74`)**, que es la de la entrega:
+### Backend desplegado en AWS EC2 (la entrega)
+
+El backend corre en la instancia EC2 `tienda-gamer-db`, junto a PostgreSQL, como servicio de Linux
+(`tienda-backend.service`). **Parte solo al hacer Start Lab** en el Learner Lab, sin levantar nada a mano:
+
+| Qué | Dirección |
+|---|---|
+| API | http://52.5.171.74:8080/api/v1 |
+| Swagger | http://52.5.171.74:8080/swagger-ui.html |
+| Base de datos | PostgreSQL en la misma instancia (`localhost:5432`, base `tienda_gamer`) |
+
+`52.5.171.74` es la IP elástica de la instancia: no cambia aunque el laboratorio se apague y se vuelva a encender.
+El front se conecta a esta API con `npm run dev:ec2`.
+
+Cómo quedó instalado (script en [`deploy/instalar-backend.sh`](deploy/instalar-backend.sh)):
+
+1. Se compila el jar en local: `./mvnw package -DskipTests` y se copia a la instancia con `scp`.
+2. El script instala Java 21, crea 1 GB de swap (la instancia t3.micro tiene ~900 MB de RAM), deja el jar en
+   `/opt/tienda` y crea `/etc/tienda-backend.env` con el perfil `postgres` y la clave de la base, que toma de
+   `/root/clave-db.txt` (la clave nunca pasa por el repositorio).
+3. Crea y habilita el servicio systemd `tienda-backend` (`Restart=always`, arranca después de PostgreSQL).
+
+Para actualizar el backend: compilar, copiar el jar a `/tmp/tienda-backend.jar` y volver a correr el script.
+Logs: `sudo journalctl -u tienda-backend -f`.
+
+### En local
+
+**Con la base de EC2** (el backend corre en tu PC y se conecta a la base por la IP elástica):
 
 ```powershell
 $env:TIENDA_DB_PASSWORD = "<clave>"
-.\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=postgres"
+.mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=postgres"
 ```
-
-El backend se conecta a `jdbc:postgresql://52.5.171.74:5432/tienda_gamer` (ver [PostgreSQL en AWS EC2](#postgresql-en-aws-ec2)).
 
 **Sin EC2**, con una base H2 local (sirve para probar sin el laboratorio encendido):
 
@@ -25,15 +50,8 @@ El backend se conecta a `jdbc:postgresql://52.5.171.74:5432/tienda_gamer` (ver [
 mvnw.cmd spring-boot:run      # Windows
 ```
 
-| Qué | Dirección |
-|---|---|
-| Base de datos (perfil `postgres`) | `52.5.171.74:5432` · base `tienda_gamer` (instancia EC2, IP elástica) |
-| API | http://localhost:8080/api/v1 |
-| Swagger | http://localhost:8080/swagger-ui.html |
-| Consola H2 (solo sin perfil) | http://localhost:8080/h2-console (JDBC URL `jdbc:h2:file:./data/tiendadb`, usuario `sa`, sin clave) |
-
-La API y Swagger usan `localhost` porque el backend corre en el computador donde se ejecuta
-`mvnw`; el que está en EC2 es el servidor de base de datos, y a ese se llega por la IP elástica.
+En local la API queda en http://localhost:8080/api/v1 y Swagger en http://localhost:8080/swagger-ui.html.
+Consola H2 (solo sin perfil): http://localhost:8080/h2-console (JDBC URL `jdbc:h2:file:./data/tiendadb`, usuario `sa`, sin clave).
 
 ### Base de datos
 
@@ -51,7 +69,7 @@ La base de datos de la entrega está en una instancia EC2 del Learner Lab de AWS
 |---|---|
 | Instancia | `tienda-gamer-db` · Ubuntu · t3.micro · us-east-1 |
 | IP (elástica, no cambia al reiniciar el laboratorio) | `52.5.171.74` |
-| Puerto | 5432 (abierto solo para la IP del equipo en el grupo de seguridad `tienda-db-sg`) |
+| Puertos (grupo de seguridad `tienda-db-sg`) | 8080 abierto (API); 5432 y 22 solo para las IP del equipo |
 | Base / usuario | `tienda_gamer` / `tienda_user` |
 | Versión | PostgreSQL 18 |
 
