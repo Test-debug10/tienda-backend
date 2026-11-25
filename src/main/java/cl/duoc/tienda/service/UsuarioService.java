@@ -152,7 +152,7 @@ public class UsuarioService {
 
     private String validarCorreoDisponible(String correo, Long idActual) {
         if (!ValidadorCorreo.esPermitido(correo)) {
-            throw new IllegalArgumentException("Solo se permiten correos @duoc.cl, @profesor.duoc.cl o @gmail.com");
+            throw new IllegalArgumentException("Solo se permiten correos @duoc.cl, @duocuc.cl, @profesor.duoc.cl o @gmail.com");
         }
         String limpio = correo.trim().toLowerCase();
         usuarioRepository.findByCorreoIgnoreCase(limpio)

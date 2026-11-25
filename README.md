@@ -122,7 +122,7 @@ detalle_orden (id, orden_id, producto_id, nombre_producto, cantidad, precio_unit
 - El total de la orden se calcula en el servidor con los precios de la BD (usa el precio de oferta si existe).
 - Si un producto no tiene stock suficiente la compra se rechaza (409) y no se guarda nada.
 - Al comprar se descuenta stock; al cancelar o eliminar una orden se devuelve.
-- RUN validado con módulo 11 y correos solo `@duoc.cl`, `@profesor.duoc.cl` o `@gmail.com`.
+- RUN validado con módulo 11 y correos solo `@duoc.cl`, `@duocuc.cl`, `@profesor.duoc.cl` o `@gmail.com`.
 - No se puede eliminar una categoría con productos, ni el último administrador, ni la propia cuenta.
 
 ## Pruebas

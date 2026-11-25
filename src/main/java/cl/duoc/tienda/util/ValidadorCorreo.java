@@ -5,7 +5,7 @@ import java.util.List;
 /** Solo se permiten correos de los dominios definidos en el requerimiento RF-002. */
 public final class ValidadorCorreo {
 
-    public static final List<String> DOMINIOS_PERMITIDOS = List.of("@duoc.cl", "@profesor.duoc.cl", "@gmail.com");
+    public static final List<String> DOMINIOS_PERMITIDOS = List.of("@duoc.cl", "@duocuc.cl", "@profesor.duoc.cl", "@gmail.com");
 
     private ValidadorCorreo() {
     }

@@ -31,6 +31,7 @@ class ValidadoresTest {
     @Test
     void correoSoloDominiosPermitidos() {
         assertTrue(ValidadorCorreo.esPermitido("alumno@duoc.cl"));
+        assertTrue(ValidadorCorreo.esPermitido("alumno@duocuc.cl"));
         assertTrue(ValidadorCorreo.esPermitido("profe@profesor.duoc.cl"));
         assertTrue(ValidadorCorreo.esPermitido("Persona@Gmail.com"));
         assertFalse(ValidadorCorreo.esPermitido("persona@hotmail.com"));
