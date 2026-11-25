@@ -11,7 +11,7 @@ Requisitos: Java 17 o superior (no hace falta instalar Maven, el proyecto trae `
 
 ### Backend desplegado en AWS EC2 (la entrega)
 
-El backend corre en la instancia EC2 `tienda-gamer-db`, junto a PostgreSQL, como servicio de Linux
+El backend corre en la instancia EC2 `tienda-gamer-db` (**Amazon Linux 2023**), junto a PostgreSQL 18, como servicio de Linux
 (`tienda-backend.service`). **Parte solo al hacer Start Lab** en el Learner Lab, sin levantar nada a mano:
 
 | Qué | Dirección |
@@ -23,10 +23,11 @@ El backend corre en la instancia EC2 `tienda-gamer-db`, junto a PostgreSQL, como
 `52.5.171.74` es la IP elástica de la instancia: no cambia aunque el laboratorio se apague y se vuelva a encender.
 El front se conecta a esta API con `npm run dev:ec2`.
 
-Cómo quedó instalado (script en [`deploy/instalar-backend.sh`](deploy/instalar-backend.sh)):
+Cómo quedó instalado (script en [`deploy/instalar-amazon-linux.sh`](deploy/instalar-amazon-linux.sh)):
 
-1. Se compila el jar en local: `./mvnw package -DskipTests` y se copia a la instancia con `scp`.
-2. El script instala Java 21, crea 1 GB de swap (la instancia t3.micro tiene ~900 MB de RAM), deja el jar en
+1. Se compila el jar en local: `./mvnw package -DskipTests` y se copia a la instancia con `scp`
+   (usuario `ec2-user`: `scp -i labsuser.pem target/tienda-backend-1.0.0.jar ec2-user@52.5.171.74:/tmp/tienda-backend.jar`).
+2. El script (con `dnf`) instala PostgreSQL 18 y Java 21 (Amazon Corretto), crea la base `tienda_gamer` y el usuario `tienda_user`, crea 1 GB de swap (la instancia t3.micro tiene ~900 MB de RAM), deja el jar en
    `/opt/tienda` y crea `/etc/tienda-backend.env` con el perfil `postgres` y la clave de la base, que toma de
    `/root/clave-db.txt` (la clave nunca pasa por el repositorio).
 3. Crea y habilita el servicio systemd `tienda-backend` (`Restart=always`, arranca después de PostgreSQL).
@@ -67,14 +68,15 @@ La base de datos de la entrega está en una instancia EC2 del Learner Lab de AWS
 
 | Dato | Valor |
 |---|---|
-| Instancia | `tienda-gamer-db` · Ubuntu · t3.micro · us-east-1 |
+| Instancia | `tienda-gamer-db` · Amazon Linux 2023 · t3.micro · us-east-1 |
+| Acceso SSH | `ssh -i labsuser.pem ec2-user@52.5.171.74` |
 | IP (elástica, no cambia al reiniciar el laboratorio) | `52.5.171.74` |
 | Puertos (grupo de seguridad `tienda-db-sg`) | 8080 abierto (API); 5432 y 22 solo para las IP del equipo |
 | Base / usuario | `tienda_gamer` / `tienda_user` |
 | Versión | PostgreSQL 18 |
 
-PostgreSQL se instaló con un script de *user data* al crear la instancia; ese script también
-generó la contraseña, que quedó en `/root/clave-db.txt` dentro de la instancia. La contraseña
+PostgreSQL se instaló con el script `deploy/instalar-amazon-linux.sh`. La contraseña de la base
+quedó en `/root/clave-db.txt` dentro de la instancia. La contraseña
 **no está en el repositorio**: el backend la lee de la variable de entorno `TIENDA_DB_PASSWORD`
 (o `DB_PASSWORD`).
 
