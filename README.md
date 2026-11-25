@@ -1,168 +1,119 @@
-# Backend Tienda Gamer (DSY1104)
+# Mi Tienda En Linea
 
-API REST de la tienda online hecha con **Spring Boot 3.5**, **Spring Data JPA**, **Spring Security** y **JWT**.
-Documentada con **Swagger (springdoc-openapi)**.
+Tienda de demostración construida con React y Vite. Incluye catálogo con filtros,
+carrito, páginas de productos y blog, registro de usuarios y un panel para
+administrar los datos del sitio.
 
-Frontend en React: https://github.com/sebacasti07/Migracion-React-a-Tienda-EvFullStack1
+## Desarrollo local
 
-## Cómo ejecutarlo
-
-Requisitos: Java 17 o superior (no hace falta instalar Maven, el proyecto trae `mvnw`).
-
-### Backend desplegado en AWS EC2 (la entrega)
-
-El backend corre en la instancia EC2 `tienda-gamer-db` (**Amazon Linux 2023**), junto a PostgreSQL 18, como servicio de Linux
-(`tienda-backend.service`). **Parte solo al hacer Start Lab** en el Learner Lab, sin levantar nada a mano:
-
-| Qué | Dirección |
-|---|---|
-| API | http://52.5.171.74:8080/api/v1 |
-| Swagger | http://52.5.171.74:8080/swagger-ui.html |
-| Base de datos | PostgreSQL en la misma instancia (`localhost:5432`, base `tienda_gamer`) |
-
-`52.5.171.74` es la IP elástica de la instancia: no cambia aunque el laboratorio se apague y se vuelva a encender.
-El front se conecta a esta API con `npm run dev:ec2`.
-
-Cómo quedó instalado (script en [`deploy/instalar-amazon-linux.sh`](deploy/instalar-amazon-linux.sh)):
-
-1. Se compila el jar en local: `./mvnw package -DskipTests` y se copia a la instancia con `scp`
-   (usuario `ec2-user`: `scp -i labsuser.pem target/tienda-backend-1.0.0.jar ec2-user@52.5.171.74:/tmp/tienda-backend.jar`).
-2. El script (con `dnf`) instala PostgreSQL 18 y Java 21 (Amazon Corretto), crea la base `tienda_gamer` y el usuario `tienda_user`, crea 1 GB de swap (la instancia t3.micro tiene ~900 MB de RAM), deja el jar en
-   `/opt/tienda` y crea `/etc/tienda-backend.env` con el perfil `postgres` y la clave de la base, que toma de
-   `/root/clave-db.txt` (la clave nunca pasa por el repositorio).
-3. Crea y habilita el servicio systemd `tienda-backend` (`Restart=always`, arranca después de PostgreSQL).
-
-Para actualizar el backend: compilar, copiar el jar a `/tmp/tienda-backend.jar` y volver a correr el script.
-Logs: `sudo journalctl -u tienda-backend -f`.
-
-### En local
-
-**Con la base de EC2** (el backend corre en tu PC y se conecta a la base por la IP elástica):
-
-```powershell
-$env:TIENDA_DB_PASSWORD = "<clave>"
-.mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=postgres"
+```sh
+npm install
+npm run dev
 ```
 
-**Sin EC2**, con una base H2 local (sirve para probar sin el laboratorio encendido):
+Validaciones:
 
-```bash
-./mvnw spring-boot:run        # Linux / Mac
-mvnw.cmd spring-boot:run      # Windows
+```sh
+npm run lint
+npm run test:run
+npm run build
 ```
 
-En local la API queda en http://localhost:8080/api/v1 y Swagger en http://localhost:8080/swagger-ui.html.
-Consola H2 (solo sin perfil): http://localhost:8080/h2-console (JDBC URL `jdbc:h2:file:./data/tiendadb`, usuario `sa`, sin clave).
+Para ejecutar las pruebas en modo watch durante el desarrollo:
 
-### Base de datos
+```sh
+npm test
+```
 
-| Perfil | Base de datos | Cómo activarlo |
+Para ejecutar las pruebas de navegador en Chromium real con Playwright:
+
+```sh
+npm run test:browser
+```
+
+La suite habitual usa Vitest con jsdom; las pruebas `*.browser.test.jsx` corren
+en Chromium. Los matchers de `@testing-library/jest-dom` y la limpieza de React
+Testing Library se configuran en `src/test/setup.js`.
+
+### Pruebas con Jasmine + Karma
+
+Las pruebas unitarias que pide la pauta (Jasmine y Karma) están en `src/specs/*.spec.js`
+y corren en un navegador real sin ventana (Chrome, o Edge si no hay Chrome instalado):
+
+```sh
+npm run test:karma
+```
+
+Están separadas según la propuesta de pruebas: `renderizado`, `props`, `estado`,
+`eventos`, `mocks-api` (servicios simulados con `spyOn` de Jasmine) y `utilidades`.
+Al terminar se genera el reporte de cobertura en `coverage/karma/html/index.html`.
+La configuración está en `karma.conf.cjs` (esbuild compila el JSX y un plugin de
+Istanbul instrumenta el código de `src` para medir la cobertura).
+
+## Integración con el backend (Evaluación 3)
+
+El frontend consume la API REST del proyecto **tienda-backend** (Spring Boot + JWT),
+disponible en https://github.com/Test-debug10/tienda-backend.
+Hay tres formas de ejecutarlo:
+
+| Modo / Comando | URL Base / API | Cuándo |
 |---|---|---|
-| (por defecto) | H2 en archivo `./data/tiendadb` | nada |
-| `postgres` | PostgreSQL en la instancia AWS EC2 | `./mvnw spring-boot:run -Dspring-boot.run.profiles=postgres` |
-| `mysql` | MySQL | `./mvnw spring-boot:run -Dspring-boot.run.profiles=mysql` |
+| Producción AWS EC2 (`Nginx`) | `http://52.5.171.74` (API en `/api/v1`) | Despliegue productivo: frontend compilado (`dist/`) servido por Nginx y enrutado al backend en puerto `8080` |
+| `npm run dev:ec2` | `http://52.5.171.74:8080/api/v1` | Desarrollo local apuntando al backend en AWS EC2 (IP elástica) |
+| `npm run dev` | `http://localhost:8080/api/v1` | Desarrollo 100% local: requiere levantar el backend con `./mvnw spring-boot:run` |
 
-### PostgreSQL en AWS EC2
+La URL del modo EC2 local está en el archivo `.env.ec2`. Para el build de producción
+servido tras Nginx se utiliza ruta relativa (`VITE_API_URL=/api/v1`).
 
-La base de datos de la entrega está en una instancia EC2 del Learner Lab de AWS Academy:
+### Cuentas de prueba
 
-| Dato | Valor |
-|---|---|
-| Instancia | `tienda-gamer-db` · Amazon Linux 2023 · t3.micro · us-east-1 |
-| Acceso SSH | `ssh -i labsuser.pem ec2-user@52.5.171.74` |
-| IP (elástica, no cambia al reiniciar el laboratorio) | `52.5.171.74` |
-| Puertos (grupo de seguridad `tienda-db-sg`) | 8080 abierto (API); 5432 y 22 solo para las IP del equipo |
-| Base / usuario | `tienda_gamer` / `tienda_user` |
-| Versión | PostgreSQL 18 |
-
-PostgreSQL se instaló con el script `deploy/instalar-amazon-linux.sh`. La contraseña de la base
-quedó en `/root/clave-db.txt` dentro de la instancia. La contraseña
-**no está en el repositorio**: el backend la lee de la variable de entorno `TIENDA_DB_PASSWORD`
-(o `DB_PASSWORD`).
-
-```powershell
-$env:TIENDA_DB_PASSWORD = "<clave>"
-.\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=postgres"
-```
-
-Antes hay que iniciar el laboratorio (Start Lab): al apagarse, la instancia se detiene.
-Si la red desde donde se trabaja cambia de IP, hay que actualizar la regla del puerto 5432 en
-`tienda-db-sg`. Para otra instancia se puede sobrescribir todo con `DB_URL`, `DB_USER` y `DB_PASSWORD`.
-
-Las tablas se crean solas (`ddl-auto=update`) y la primera vez se cargan datos de ejemplo.
-
-### Usuarios de prueba
-
-| Rol | Correo | Contraseña |
-|---|---|---|
-| ADMIN | admin@duoc.cl | Admin1234@ |
-| VENDEDOR | vendedor@duoc.cl | Vendedor123@ |
-| CLIENTE | cliente@gmail.com | Cliente123@ |
-
-## Modelo de datos
-
-```
-categorias (id, nombre, descripcion)
-    1 ── N
-productos (id, codigo, nombre, descripcion, precio, precio_oferta, stock, stock_critico, imagen, emoji, categoria_id)
-
-usuarios (id, run, nombre, apellidos, correo, password[BCrypt], rol, fecha_nacimiento, region, comuna, direccion, fecha_registro)
-    1 ── N
-ordenes (id, fecha, estado, usuario_id, nombre, apellidos, correo, calle, departamento, region, comuna, indicaciones, total)
-    1 ── N
-detalle_orden (id, orden_id, producto_id, nombre_producto, cantidad, precio_unitario, subtotal)
-```
-
-## Endpoints (versión v1)
-
-| Método | Ruta | Descripción | Acceso |
+| Rol | Correo | Contraseña | Qué puede hacer |
 |---|---|---|---|
-| POST | /api/v1/auth/login | Iniciar sesión, devuelve token y refresh token | Público |
-| POST | /api/v1/auth/registro | Registro de cliente | Público |
-| POST | /api/v1/auth/refresh | Renovar token de acceso | Público (con refresh token) |
-| GET | /api/v1/auth/me | Perfil del usuario conectado | Autenticado |
-| PUT | /api/v1/auth/password | Cambiar mi contraseña | Autenticado |
-| GET | /api/v1/productos | Listar productos (`?categoriaId=`) | Público |
-| GET | /api/v1/productos/ofertas | Productos en oferta | Público |
-| GET | /api/v1/productos/stock-critico | Productos con stock crítico | ADMIN, VENDEDOR |
-| GET | /api/v1/productos/{id} | Detalle de producto | Público |
-| POST | /api/v1/productos | Crear producto | ADMIN |
-| PUT | /api/v1/productos/{id} | Actualizar producto | ADMIN |
-| DELETE | /api/v1/productos/{id} | Eliminar producto | ADMIN |
-| GET | /api/v1/categorias | Listar categorías | Público |
-| GET | /api/v1/categorias/{id} | Detalle de categoría | Público |
-| POST/PUT/DELETE | /api/v1/categorias[/{id}] | Mantener categorías | ADMIN |
-| POST | /api/v1/ordenes | Crear orden (checkout) | CLIENTE, ADMIN |
-| GET | /api/v1/ordenes/mias | Mis compras | Autenticado |
-| GET | /api/v1/ordenes | Listar órdenes | ADMIN, VENDEDOR |
-| GET | /api/v1/ordenes/{id} | Detalle de orden | ADMIN, VENDEDOR |
-| PUT | /api/v1/ordenes/{id}/estado | Cambiar estado | ADMIN |
-| DELETE | /api/v1/ordenes/{id} | Eliminar orden | ADMIN |
-| GET/POST/PUT/DELETE | /api/v1/usuarios[/{id}] | Mantenedor de usuarios y roles | ADMIN |
+| Administrador | admin@duoc.cl | Admin1234@ | Todo: productos, categorías, órdenes, usuarios y contenido |
+| Vendedor | vendedor@duoc.cl | Vendedor123@ | Ver productos y órdenes (lista y detalle), sin modificar |
+| Cliente | cliente@gmail.com | Cliente123@ | Comprar en la tienda y ver sus compras |
 
-## Seguridad
+### Cómo está armado
 
-- Contraseñas cifradas con **BCrypt**.
-- Login entrega un **token de acceso** (30 min) y un **refresh token** (7 días), ambos JWT firmados con HMAC-SHA256.
-- `JwtAuthenticationFilter` valida firma, expiración y tipo de token en cada petición y carga el rol desde la BD.
-- `SecurityConfig` define qué rol puede usar cada endpoint. Sesión `STATELESS`.
-- Errores en JSON: 401 (sin token o token inválido), 403 (rol sin permiso), 404, 409 (regla de negocio).
-- La clave del JWT se puede definir con la variable de entorno `JWT_SECRET`.
+- `src/api/cliente.js`: instancia de **axios**. Un interceptor agrega `Authorization: Bearer <token>`
+  a cada petición y, si el backend responde 401, renueva el token con `/auth/refresh` y repite la petición.
+- `src/api/servicios.js`: una función por endpoint (`productosApi`, `ordenesApi`, `usuariosApi`, etc.).
+- `src/context/AuthContext.jsx`: guarda la sesión (`sesionTienda`: token, refresh token y usuario) en `localStorage`,
+  así sobrevive a recargas. Al iniciar, confirma la sesión con `GET /auth/me`, cierra sola cuando vence el
+  refresh token y se sincroniza entre pestañas.
+- `src/components/RutaProtegida.jsx` y `src/utils/permisos.js`: restringen rutas, pestañas y botones según el rol.
+  Es solo la capa visual: el backend vuelve a validar el rol en cada petición.
+- Flujo de compra: carrito → `/checkout` → `POST /ordenes` → `/compra-exitosa/:id` o `/compra-fallida`.
 
-## Lógica de negocio
+Blogs y textos de "Nosotros" y "Contacto" siguen guardándose en el navegador.
 
-- El total de la orden se calcula en el servidor con los precios de la BD (usa el precio de oferta si existe).
-- Si un producto no tiene stock suficiente la compra se rechaza (409) y no se guarda nada.
-- Al comprar se descuenta stock; al cancelar o eliminar una orden se devuelve.
-- RUN validado con módulo 11 y correos solo `@duoc.cl`, `@duocuc.cl`, `@profesor.duoc.cl` o `@gmail.com`.
-- No se puede eliminar una categoría con productos, ni el último administrador, ni la propia cuenta.
+## Despliegue en Producción (AWS EC2)
 
-## Pruebas
+La aplicación completa se encuentra desplegada en una instancia **AWS EC2 (Amazon Linux 2023)** con IP elástica `52.5.171.74`:
 
-```bash
-./mvnw test
+- **Servidor Web y Proxy Inverso (`Nginx`):** Escucha en el puerto `80`, sirve los archivos estáticos compilados de React (`/var/www/tienda-frontend`) con soporte para rutas SPA (`try_files $uri $uri/ /index.html`) y redirige las peticiones `/api/` hacia el backend en `http://127.0.0.1:8080`.
+- **Backend (`Spring Boot` + `systemd`):** Ejecutado como servicio del sistema (`tienda-backend.service`) con arranque automático al iniciar la instancia EC2.
+- **Base de Datos (`PostgreSQL 15`):** Migrada desde H2 en memoria hacia **PostgreSQL 15** local (`jdbc:postgresql://localhost:5432/carrito_compras`), garantizando persistencia real de usuarios (con contraseñas cifradas en BCrypt), categorías, productos y órdenes entre reinicios del servidor. Las credenciales se gestionan de forma segura mediante variables de entorno en `systemd` (`DB_PASSWORD`).
+- **Documentación y Pruebas API (`Swagger UI` / OpenAPI 3):** Disponible en `http://52.5.171.74:8080/swagger-ui/index.html` (esquema JSON en `/v3/api-docs`). Permite probar el endpoint `POST /api/v1/auth/login`, obtener el token JWT y autorizar peticiones protegidas (`Authorize` con esquema `Bearer`) como `GET /api/v1/usuarios` y `GET /api/v1/ordenes`.
+
+### Verificación de PostgreSQL 15 en la instancia EC2
+
+Comandos para auditar el estado del motor de base de datos, listar las tablas creadas por JPA/Hibernate y comprobar los registros persistidos directamente desde la terminal SSH:
+
+```sh
+# 1. Verificar que el servicio PostgreSQL esté activo
+sudo systemctl status postgresql
+
+# 2. Listar las tablas creadas en la base de datos carrito_compras
+sudo -u postgres psql -d carrito_compras -c "\dt"
+
+# 3. Consultar los usuarios registrados y sus roles
+sudo -u postgres psql -d carrito_compras -c "SELECT id, nombre, correo, rol FROM usuarios;"
+
+# 4. Consultar los productos y órdenes almacenadas
+sudo -u postgres psql -d carrito_compras -c "SELECT id, nombre, precio, stock FROM productos;"
+sudo -u postgres psql -d carrito_compras -c "SELECT id, total, estado, fecha FROM ordenes;"
+
+# 5. Entrar a la consola interactiva de PostgreSQL (salir con \q)
+sudo -u postgres psql -d carrito_compras
 ```
-
-- `ValidadoresTest`: RUN y correo.
-- `OrdenServiceTest`: lógica de compra con Mockito (total con oferta, stock insuficiente, cancelación).
-- `SeguridadApiTest`: integración con MockMvc (login, JWT alterado, refresh, permisos por rol, CRUD).
