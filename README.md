@@ -9,19 +9,31 @@ Frontend en React: https://github.com/sebacasti07/Migracion-React-a-Tienda-EvFul
 
 Requisitos: Java 17 o superior (no hace falta instalar Maven, el proyecto trae `mvnw`).
 
-```bash
-./mvnw spring-boot:run
+**Con la base de datos en AWS EC2 (IP elástica `52.5.171.74`)**, que es la de la entrega:
+
+```powershell
+$env:TIENDA_DB_PASSWORD = "<clave>"
+.\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=postgres"
 ```
 
-En Windows (PowerShell o CMD):
+El backend se conecta a `jdbc:postgresql://52.5.171.74:5432/tienda_gamer` (ver [PostgreSQL en AWS EC2](#postgresql-en-aws-ec2)).
+
+**Sin EC2**, con una base H2 local (sirve para probar sin el laboratorio encendido):
 
 ```bash
-mvnw.cmd spring-boot:run
+./mvnw spring-boot:run        # Linux / Mac
+mvnw.cmd spring-boot:run      # Windows
 ```
 
-- API: http://localhost:8080/api/v1
-- Swagger: http://localhost:8080/swagger-ui.html
-- Consola H2 (solo perfil por defecto): http://localhost:8080/h2-console (JDBC URL `jdbc:h2:file:./data/tiendadb`, usuario `sa`, sin clave)
+| Qué | Dirección |
+|---|---|
+| Base de datos (perfil `postgres`) | `52.5.171.74:5432` · base `tienda_gamer` (instancia EC2, IP elástica) |
+| API | http://localhost:8080/api/v1 |
+| Swagger | http://localhost:8080/swagger-ui.html |
+| Consola H2 (solo sin perfil) | http://localhost:8080/h2-console (JDBC URL `jdbc:h2:file:./data/tiendadb`, usuario `sa`, sin clave) |
+
+La API y Swagger usan `localhost` porque el backend corre en el computador donde se ejecuta
+`mvnw`; el que está en EC2 es el servidor de base de datos, y a ese se llega por la IP elástica.
 
 ### Base de datos
 
