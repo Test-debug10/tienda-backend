@@ -1,5 +1,6 @@
 package cl.duoc.tienda.exception;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -28,6 +29,12 @@ public class ManejadorErrores {
     @ExceptionHandler(ReglaNegocioException.class)
     public ResponseEntity<Map<String, Object>> reglaNegocio(ReglaNegocioException ex) {
         return respuesta(HttpStatus.CONFLICT, ex.getMessage(), null);
+    }
+
+    /** La base de datos rechazó el cambio (restricción CHECK, UNIQUE o llave foránea). */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, Object>> integridad(DataIntegrityViolationException ex) {
+        return respuesta(HttpStatus.CONFLICT, "La base de datos rechazó la operación porque no cumple sus reglas", null);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

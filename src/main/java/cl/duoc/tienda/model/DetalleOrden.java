@@ -1,9 +1,13 @@
 package cl.duoc.tienda.model;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.Check;
 
 @Entity
 @Table(name = "detalle_orden")
+@Check(name = "ck_detalle_cantidad", constraints = "cantidad > 0")
+@Check(name = "ck_detalle_precio", constraints = "precio_unitario > 0")
+@Check(name = "ck_detalle_subtotal", constraints = "subtotal = cantidad * precio_unitario")
 public class DetalleOrden {
 
     @Id

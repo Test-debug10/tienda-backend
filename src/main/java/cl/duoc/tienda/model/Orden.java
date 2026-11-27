@@ -1,6 +1,7 @@
 package cl.duoc.tienda.model;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.Check;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -8,6 +9,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "ordenes")
+@Check(name = "ck_ordenes_total", constraints = "total >= 0")
 public class Orden {
 
     @Id

@@ -117,3 +117,19 @@ sudo -u postgres psql -d carrito_compras -c "SELECT id, total, estado, fecha FRO
 # 5. Entrar a la consola interactiva de PostgreSQL (salir con \q)
 sudo -u postgres psql -d carrito_compras
 ```
+
+## Validaciones en la base de datos
+
+Además de las validaciones del backend, PostgreSQL tiene restricciones propias, así que ni con SQL directo se pueden guardar datos inválidos:
+
+| Tabla | Restricción |
+|---|---|
+| productos | `precio > 0`, `precio_oferta IS NULL OR precio_oferta > 0`, `stock >= 0`, `stock_critico >= 0`, `codigo` UNIQUE |
+| detalle_orden | `cantidad > 0`, `precio_unitario > 0`, `subtotal = cantidad * precio_unitario` |
+| ordenes | `total >= 0` |
+| usuarios | `run` y `correo` UNIQUE |
+| Relaciones | Llaves foráneas productos→categorias, ordenes→usuarios, detalle_orden→ordenes y productos |
+
+Hibernate crea los CHECK en las tablas nuevas (anotaciones `@Check` en las entidades); para una base que ya existía están en [`deploy/restricciones.sql`](deploy/restricciones.sql). Si la base rechaza algo, la API responde 409.
+
+El stock se controla en tres capas: el carrito del frontend no deja agregar más unidades que el stock, el backend rechaza la compra con 409 si no alcanza, y la base tiene `CHECK (stock >= 0)` como última barrera (por ejemplo si dos clientes compran la última unidad al mismo tiempo). La prueba `RestriccionesBdTest` verifica que la base rechace stock negativo, precio 0 y cantidad 0.

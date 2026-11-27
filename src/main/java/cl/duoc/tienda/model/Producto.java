@@ -1,9 +1,15 @@
 package cl.duoc.tienda.model;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.Check;
 
 @Entity
 @Table(name = "productos")
+// Validaciones en la propia base de datos: aunque alguien salte el backend, PostgreSQL no acepta estos valores
+@Check(name = "ck_productos_precio", constraints = "precio > 0")
+@Check(name = "ck_productos_precio_oferta", constraints = "precio_oferta IS NULL OR precio_oferta > 0")
+@Check(name = "ck_productos_stock", constraints = "stock >= 0")
+@Check(name = "ck_productos_stock_critico", constraints = "stock_critico >= 0")
 public class Producto {
 
     @Id
