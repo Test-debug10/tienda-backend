@@ -130,7 +130,9 @@ class SeguridadApiTest {
         mvc.perform(post("/api/v1/auth/refresh").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"refreshToken\":\"" + refresh + "\"}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.token").isNotEmpty());
+                .andExpect(jsonPath("$.token").isNotEmpty())
+                // La sesión no se alarga: se devuelve el mismo refresh token (máximo 2 horas desde el login)
+                .andExpect(jsonPath("$.refreshToken").value(refresh));
     }
 
     @Test

@@ -46,21 +46,26 @@ public class AuthService {
 
     /**
      * Renueva la sesión: recibe un refresh token válido y entrega un token de acceso nuevo
-     * (y un refresh nuevo). Se vuelve a leer el usuario desde la BD para usar su rol actual.
+     * y devuelve el MISMO refresh token: así la sesión dura como máximo 2 horas desde el login,
+     * aunque el usuario siga activo. Se vuelve a leer el usuario desde la BD para usar su rol actual.
      */
     public AuthResponse renovar(RefreshRequest datos) {
         try {
             Claims claims = jwtService.validar(datos.refreshToken(), JwtService.TIPO_RENOVACION);
-            return respuesta(usuarioService.buscarPorCorreo(claims.getSubject()));
+            return respuesta(usuarioService.buscarPorCorreo(claims.getSubject()), datos.refreshToken());
         } catch (JwtException | IllegalArgumentException ex) {
             throw new BadCredentialsException("Token de renovación inválido o expirado");
         }
     }
 
     private AuthResponse respuesta(Usuario usuario) {
+        return respuesta(usuario, jwtService.generarRefreshToken(usuario));
+    }
+
+    private AuthResponse respuesta(Usuario usuario, String refreshToken) {
         return new AuthResponse(
                 jwtService.generarToken(usuario),
-                jwtService.generarRefreshToken(usuario),
+                refreshToken,
                 "Bearer",
                 jwtService.getExpiracionMs(),
                 UsuarioDTO.desde(usuario)

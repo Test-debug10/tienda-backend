@@ -15,7 +15,7 @@ import java.util.Date;
 /**
  * Genera y verifica los tokens JWT.
  * - Token de acceso: dura poco (30 min) y va en cada petición (Authorization: Bearer ...).
- * - Token de renovación (refresh): dura más (7 días) y solo sirve para pedir un nuevo token de acceso.
+ * - Token de renovación (refresh): dura más (2 horas) y solo sirve para pedir un nuevo token de acceso.
  * Ambos se firman con HMAC-SHA256 usando una clave secreta que solo conoce el servidor.
  */
 @Service
